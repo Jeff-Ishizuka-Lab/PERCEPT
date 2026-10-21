@@ -1,0 +1,356 @@
+---
+title: "CellChat"
+output: html_document
+date: "2024-02-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Library
+
+```{r library}
+library(Seurat)
+library(ggplot2)
+library(cowplot)
+library(viridis)
+library(CellChat)
+library(patchwork)
+library(dplyr)
+
+# how to install CellChat
+#install.packages('NMF')
+#devtools::install_github("jokergoo/circlize")
+#devtools::install_github("jokergoo/ComplexHeatmap")
+#devtools::install_github('immunogenomics/presto')
+
+#devtools::install_github("jinworks/CellChat")
+```
+
+# Rerun CellChat from Seurat object
+
+Get NS (no stim) cells
+
+```{r get NS cells}
+# read in the merged Seurat object
+merged_tumors <- readRDS(file = "final_merged_all.rds")
+
+# get only NS (non-stimulated) sample
+Idents(merged_tumors) <- "condition"
+NS_subset <- subset(merged_tumors,ident="NS")
+# expect only NS
+table(NS_subset@meta.data$condition)
+
+# get only SLR14 sample
+Idents(merged_tumors) <- "condition"
+SLR14_subset <- subset(merged_tumors,ident="SLR14")
+# expect only SLR14
+table(SLR14_subset@meta.data$condition)
+
+# get only IFNb sample
+Idents(merged_tumors) <- "condition"
+IFNb_subset <- subset(merged_tumors,ident="IFNb")
+# expect only IFNb
+table(IFNb_subset@meta.data$condition)
+
+#table(merged_tumors$condition)
+
+rm(merged_tumors)
+```
+
+Make sure the MCC samples have only MCC (no MEL) and vice versa
+- Method 1: change those mislabeled MCC to MEL and vice versa
+- Method 2: directly delete those mislabeled cells
+
+```{r correct tumor cell types}
+condition_subset <- IFNb_subset ##REMEMBER to change correct subset
+
+# identify cells with incorrect label
+MCC_mislabel <- which(condition_subset@meta.data$type == "MCC" 
+                      & condition_subset@meta.data$broad_cell_type == "melanoma tumor cells")
+
+MEL_mislabel <- which(condition_subset@meta.data$type == "MEL" & 
+                        (condition_subset@meta.data$broad_cell_type == "Merkel Cell Carcinoma tumor cells" |
+                           condition_subset@meta.data$broad_cell_type == "proliferating MCC tumor cells" |
+                           condition_subset@meta.data$broad_cell_type == "MCC tumor cells"))
+
+# Method 1: update the cell_type
+#condition_subset@meta.data$broad_cell_type[MCC_mislabel] <- "MCC tumor cells"
+#condition_subset@meta.data$broad_cell_type[MEL_mislabel] <- "melanoma tumor cells"
+
+# Method 2: delete those cells
+cells_to_remove <- colnames(condition_subset)[c(MCC_mislabel, MEL_mislabel)]
+condition_subset <- subset(condition_subset, cells = cells_to_remove, invert = TRUE)
+```
+
+
+Want MCC NS, MEL NS, R NS, NR NS
+
+```{r subset into MCC MEL R NR}
+# MCC
+Idents(condition_subset) <- "type"
+MCC_subset <- subset(condition_subset, ident="MCC")
+# expect only MCC
+table(MCC_subset@meta.data$type)
+
+# MEL
+Idents(condition_subset) <- "type"
+MEL_subset <- subset(condition_subset, ident="MEL")
+# expect only MEL
+table(MEL_subset@meta.data$type)
+
+# R
+Idents(condition_subset) <- "Response"
+R_subset <- subset(condition_subset, ident="R")
+# expect only R
+table(R_subset@meta.data$Response)
+
+# NR
+Idents(condition_subset) <- "Response"
+NR_subset <- subset(condition_subset, ident="NR")
+# expect only NR
+table(NR_subset@meta.data$Response)
+```
+
+ Merge cell types to broader cell types
+
+```{r merge cell type for MCC}
+# update cell type
+MCC_subset@meta.data <- mutate(MCC_subset@meta.data, cell_type_CC = case_when(
+  broad_cell_type == "memory CD4+ T cell- low ISG" ~ "CD4 T cells",
+  broad_cell_type == "memory CD4+ T cell- high ISG" ~ "CD4 T cells",
+  broad_cell_type == "CD4+ T cells (Tfh?)" ~ "CD4 T cells",
+  broad_cell_type == "CD8+ T cell-effector memory" ~ "CD8 T cells",
+  broad_cell_type == "Merkel Cell Carcinoma tumor cells" ~ "MCC",
+  broad_cell_type == "proliferating MCC tumor cells" ~ "MCC",
+  broad_cell_type == "MCC tumor cells" ~ "MCC",
+  broad_cell_type == "melanoma tumor cells" ~ "MCC",
+  broad_cell_type == "monocytes (inflammatory M1)" ~ "Myeloid cells",
+  broad_cell_type == "DCs" ~ "Myeloid cells",
+  broad_cell_type == "macrophages (M2)" ~ "Myeloid cells",
+  TRUE ~ broad_cell_type
+))
+
+table(MCC_subset@meta.data$broad_cell_type)
+table(MCC_subset@meta.data$cell_type_CC)
+
+```
+
+```{r merge cell type for MEL}
+MEL_subset@meta.data <- mutate(MEL_subset@meta.data, cell_type_CC = case_when(
+  broad_cell_type == "memory CD4+ T cell- low ISG" ~ "CD4 T cells",
+  broad_cell_type == "memory CD4+ T cell- high ISG" ~ "CD4 T cells",
+  broad_cell_type == "CD4+ T cells (Tfh?)" ~ "CD4 T cells",
+  broad_cell_type == "CD8+ T cell-effector memory" ~ "CD8 T cells",
+  broad_cell_type == "Merkel Cell Carcinoma tumor cells" ~ "MEL",
+  broad_cell_type == "proliferating MCC tumor cells" ~ "MEL",
+  broad_cell_type == "MCC tumor cells" ~ "MEL",
+  broad_cell_type == "melanoma tumor cells" ~ "MEL",
+  broad_cell_type == "monocytes (inflammatory M1)" ~ "Myeloid cells",
+  broad_cell_type == "DCs" ~ "Myeloid cells",
+  broad_cell_type == "macrophages (M2)" ~ "Myeloid cells",
+  TRUE ~ broad_cell_type
+))
+table(MEL_subset@meta.data$broad_cell_type)
+table(MEL_subset@meta.data$cell_type_CC)
+```
+
+```{r merge cell type for R}
+# update cell type
+R_subset@meta.data <- mutate(R_subset@meta.data, cell_type_CC = case_when(
+  broad_cell_type == "memory CD4+ T cell- low ISG" ~ "CD4 T cells",
+  broad_cell_type == "memory CD4+ T cell- high ISG" ~ "CD4 T cells",
+  broad_cell_type == "CD4+ T cells (Tfh?)" ~ "CD4 T cells",
+  broad_cell_type == "CD8+ T cell-effector memory" ~ "CD8 T cells",
+  broad_cell_type == "Merkel Cell Carcinoma tumor cells" ~ "MCC",
+  broad_cell_type == "proliferating MCC tumor cells" ~ "MCC",
+  broad_cell_type == "MCC tumor cells" ~ "MCC",
+  broad_cell_type == "melanoma tumor cells" ~ "MEL",
+  broad_cell_type == "monocytes (inflammatory M1)" ~ "Myeloid cells",
+  broad_cell_type == "DCs" ~ "Myeloid cells",
+  broad_cell_type == "macrophages (M2)" ~ "Myeloid cells",
+  TRUE ~ broad_cell_type
+))
+
+table(R_subset@meta.data$broad_cell_type)
+
+table(R_subset@meta.data$cell_type_CC)
+```
+
+```{r merge cell type for NR}
+# update cell type
+NR_subset@meta.data <- mutate(NR_subset@meta.data, cell_type_CC = case_when(
+  broad_cell_type == "memory CD4+ T cell- low ISG" ~ "CD4 T cells",
+  broad_cell_type == "memory CD4+ T cell- high ISG" ~ "CD4 T cells",
+  broad_cell_type == "CD4+ T cells (Tfh?)" ~ "CD4 T cells",
+  broad_cell_type == "CD8+ T cell-effector memory" ~ "CD8 T cells",
+  broad_cell_type == "Merkel Cell Carcinoma tumor cells" ~ "MCC",
+  broad_cell_type == "proliferating MCC tumor cells" ~ "MCC",
+  broad_cell_type == "MCC tumor cells" ~ "MCC",
+  broad_cell_type == "melanoma tumor cells" ~ "MEL",
+  broad_cell_type == "monocytes (inflammatory M1)" ~ "Myeloid cells",
+  broad_cell_type == "DCs" ~ "Myeloid cells",
+  broad_cell_type == "macrophages (M2)" ~ "Myeloid cells",
+  TRUE ~ broad_cell_type
+))
+
+table(NR_subset@meta.data$broad_cell_type)
+table(NR_subset@meta.data$cell_type_CC)
+```
+
+
+separate MCC to MCC R and MCC NR
+```{r}
+# R
+Idents(MCC_subset) <- "Response"
+MCC_R_subset <- subset(MCC_subset, ident="R")
+# expect only R
+table(MCC_R_subset@meta.data$Response)
+
+# NR
+Idents(MCC_subset) <- "Response"
+MCC_NR_subset <- subset(MCC_subset, ident="NR")
+# expect only NR
+table(MCC_NR_subset@meta.data$Response)
+```
+
+
+separate each MCC samples
+```{r}
+Idents(MCC_subset) <- "sample"
+table(MCC_subset$sample)
+MC79 <- subset(MCC_subset, ident = "MC79") # no interaction (no stim): too few cells
+YUEYE <- subset(MCC_subset, ident = "YUEYE")
+YUMISTY <- subset(MCC_subset, ident = "YUMISTY")
+YURAD <- subset(MCC_subset, ident = "YURAD") # no interaction (no stim): all MCC cells
+```
+
+
+separate each MEL samples
+```{r}
+Idents(MEL_subset) <- "sample"
+table(MEL_subset$sample)
+MEL720 <- subset(MEL_subset, ident = "MEL720") 
+YUBOISE <- subset(MEL_subset, ident = "YUBOISE")
+YUKOA <- subset(MEL_subset, ident = "YUKOA")
+YUSYR <- subset(MEL_subset, ident = "YUSYR")
+YUTOUL <- subset(MEL_subset, ident = "YUTOUL") 
+```
+
+
+## create CellChat object
+```{r create cellchat object from seurat object}
+# change to the subset that you want to run
+# specifically: MCC_subset, MEL_subset, R_subset, NR_subset, MCC_R_subset, MCC_NR_subset, MC79, YUEYE, YUMISTY, YURAD
+seurat_subset <- YUTOUL
+table(YUTOUL$cell_type_CC)
+
+# labeles - should be the cell type
+Idents(seurat_subset) <- "cell_type_CC"
+cellchat <- createCellChat(object = seurat_subset, group.by = "ident", assay = "RNA")
+```
+
+Update the cell-type order - R vs. NR
+```{r}
+# for R vs. NR
+R_vs_NR_levels = c("MCC", "MEL", "CD8 T cells", "CD4 T cells", "Tregs", "Myeloid cells", "NK cells", "B cells")
+
+cellchat@meta$cell_type_CC = factor(cellchat@meta$cell_type_CC, levels = R_vs_NR_levels)
+cellchat <- setIdent(cellchat, ident.use = "cell_type_CC")
+
+# check if the levels are updated correctly (should return TRUE)
+levels(cellchat@idents) == R_vs_NR_levels
+```
+
+Update the cell-type order - MCC R vs. MCC NR (also MCC)
+```{r}
+# for MCC R vs. MCC NR
+MCC_R_vs_NR_levels = c("MCC", "CD8 T cells", "CD4 T cells", "Tregs", "Myeloid cells", "NK cells", "B cells")
+
+cellchat@meta$cell_type_CC = factor(cellchat@meta$cell_type_CC, levels = MCC_R_vs_NR_levels)
+cellchat <- setIdent(cellchat, ident.use = "cell_type_CC")
+
+# check if the levels are updated correctly (should return TRUE)
+levels(cellchat@idents) == MCC_R_vs_NR_levels
+
+#levels(cellchat@idents) = droplevels(cellchat@meta$cell_type_CC, exclude = setdiff(levels(cellchat@idents),unique(cellchat@meta$cell_type_CC)))
+
+```
+
+Update the cell-type order - MCC vs. MEL 
+```{r}
+# for MEL
+MEL_levels = c("MEL", "CD8 T cells", "CD4 T cells", "Tregs", "Myeloid cells", "NK cells", "B cells")
+
+cellchat@meta$cell_type_CC = factor(cellchat@meta$cell_type_CC, levels = MEL_levels)
+cellchat <- setIdent(cellchat, ident.use = "cell_type_CC")
+
+# check if the levels are updated correctly (should return TRUE)
+levels(cellchat@idents) == MEL_levels
+```
+
+## update cellchat database
+
+Use only MDK (or MDK + PTN) L-R interactions
+```{r}
+# read in the manually defined ligands
+MDK_L_R <- read.csv("MDK_PTN_pathway_ligands.csv")
+
+# remove NCL
+MDK_L_R <- MDK_L_R[MDK_L_R$receptor != "NCL", ]
+
+# create new DB for MDK L-R pairs
+db.MDK <- updateCellChatDB(db = MDK_L_R, gene_info = NULL, species_target = "human")
+
+# update the db used for later CellChat analyses
+cellchat@DB <- db.MDK
+```
+
+
+## run cellchat
+
+Preprocessing the expression data for cell-cell communication analysis
+
+```{r}
+# subset the expression data of signaling genes for saving computation cost
+cellchat <- subsetData(cellchat) # This step is necessary even if using the whole database
+#future::plan("multisession", workers = 4) # do parallel
+cellchat <- identifyOverExpressedGenes(cellchat)
+cellchat <- identifyOverExpressedInteractions(cellchat)
+```
+
+Compute the communication probability and infer cellular communication network
+
+```{r}
+cellchat <- computeCommunProb(cellchat, type = "triMean")
+```
+
+Returns a data frame consisting of all the inferred cell-cell communications at the level of ligands/receptors. Set slot.name = "netP" to access the inferred communications at the level of signaling pathways
+
+```{r}
+df.net <- subsetCommunication(cellchat, thresh = 0.05)
+df.net
+```
+
+
+Calculate the aggregated cell-cell communication network
+CellChat calculates the aggregated cell-cell communication network by counting the number of links or summarizing the communication probability.
+```{r}
+cellchat <- aggregateNet(cellchat)
+```
+
+CellChat can also visualize the aggregated cell-cell communication network. For example, showing the number of interactions or the total interaction strength (weights) between any two cell groups using circle plot.
+```{r}
+groupSize <- as.numeric(table(cellchat@idents))
+par(mfrow = c(1,2), xpd=TRUE)
+netVisual_circle(cellchat@net$count, vertex.weight = groupSize, weight.scale = T, label.edge= F, title.name = "Number of interactions")
+netVisual_circle(cellchat@net$weight, vertex.weight = groupSize, weight.scale = T, label.edge= F, title.name = "Interaction weights/strength")
+```
+
+
+## save CellChat object
+
+```{r}
+saveRDS(cellchat, file = "MEL1_IFNb_cellchat_human.rds")
+```

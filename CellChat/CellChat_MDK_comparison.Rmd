@@ -1,0 +1,402 @@
+---
+title: "CellChat_MDK_comparison"
+date: "2024-02-14"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+    theme: cosmo
+    code_folding: hide
+    keep_md: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+dev <- ifelse(isTRUE(pdf), c("png"), c("png", "pdf")) #FALSE
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  cache = FALSE,
+  cache.lazy = FALSE,
+  # don't do lazy-loading for big objects
+  cache.comments = FALSE,
+  fig.align = "center",
+  fig.keep = "all",
+  dpi = 300,
+  dev = dev
+)
+tab3 <- "### %s {-}
+"
+tab4 <- "#### %s {-}
+"
+space <- "
+"
+```
+
+# load library
+
+
+```{r library, message=FALSE, results='hide'}
+library(Seurat)
+library(ggplot2)
+library(cowplot)
+library(viridis)
+library(CellChat)
+library(patchwork)
+library(dplyr)
+
+```
+
+# Load the CellChat object
+
+
+```{r load cellchat object}
+cellchat_MCC_updated <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_NS_cellchat_MDK_updated.rds")
+cellchat_MEL_updated <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MEL_NS_cellchat_MDK_updated.rds")
+cellchat_MCC_deleted <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_NS_cellchat_MDK_deleted2.rds")
+cellchat_MEL_deleted <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MEL_NS_cellchat_MDK_deleted2.rds")
+
+cellchat_R <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/R_NS_cellchat_MDK2.rds")
+cellchat_NR <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/NR_NS_cellchat_MDK2.rds")
+cellchat_R_updated <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/R_NS_cellchat_MDK_updated.rds")
+cellchat_NR_updated <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/NR_NS_cellchat_MDK_updated.rds")
+cellchat_R_deleted <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/R_NS_cellchat_MDK_deleted.rds")
+cellchat_NR_deleted <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/NR_NS_cellchat_MDK_deleted.rds")
+
+cellchat_MCC_R_updated <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_R_NS_cellchat_MDK_updated.rds")
+cellchat_MCC_NR_updated <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_NR_NS_cellchat_MDK_updated.rds")
+cellchat_MCC_R_deleted <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_R_NS_cellchat_MDK_deleted.rds")
+cellchat_MCC_NR_deleted <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_NR_NS_cellchat_MDK_deleted.rds")
+
+cellchat_MCC_YUEYE <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_YUEYE_cellchat_MDK.rds")
+cellchat_MCC_YUMISTY <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_YUMISTY_cellchat_MDK.rds")
+cellchat_MCC_YUEYE_SLR14 <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_YUEYE_SLR14_cellchat_MDK.rds")
+cellchat_MCC_YUMISTY_SLR14 <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_YUMISTY_SLR14_cellchat_MDK.rds")
+cellchat_MCC_YUEYE_IFNb <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_YUEYE_IFNb_cellchat_MDK.rds")
+cellchat_MCC_YUMISTY_IFNb <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_YUMISTY_IFNb_cellchat_MDK.rds")
+
+## no NCL
+cellchat_MCC_YUEYE_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_YUEYE_ns_cellchat_MDK_noNCL.rds")
+cellchat_MCC_YUMISTY_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_YUMISTY_ns_cellchat_MDK_noNCL.rds")
+cellchat_MCC_YUEYE_SLR14_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_YUEYE_SLR14_cellchat_MDK_noNCL.rds")
+cellchat_MCC_YUMISTY_SLR14_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_YUMISTY_SLR14_cellchat_MDK_noNCL.rds")
+cellchat_MCC_YUEYE_IFNb_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_YUEYE_IFNb_cellchat_MDK_noNCL.rds")
+cellchat_MCC_YUMISTY_IFNb_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MCC_YUMISTY_IFNb_cellchat_MDK_noNCL.rds")
+
+## MEL, no NCL
+cellchat_MEL_YUBOISE_ns_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MEL_YUBOISE_ns_cellchat_MDK_noNCL.rds")
+cellchat_MEL_YUTOUL_ns_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MEL_YUTOUL_ns_cellchat_MDK_noNCL.rds")
+cellchat_MEL_YUBOISE_SLR14_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MEL_YUBOISE_SLR14_cellchat_MDK_noNCL.rds")
+cellchat_MEL_YUSYR_SLR14_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MEL_YUSYR_SLR14_cellchat_MDK_noNCL.rds")
+cellchat_MEL_YUBOISE_IFNb_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MEL_YUBOISE_IFNb_cellchat_MDK_noNCL.rds")
+cellchat_MEL_YUSYR_IFNb_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MEL_YUSYR_IFNb_cellchat_MDK_noNCL.rds")
+cellchat_MEL_YUTOUL_IFNb_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MEL_YUTOUL_IFNb_cellchat_MDK_noNCL.rds")
+cellchat_MEL_MEL720_IFNb_noNCL <- readRDS("/gpfs/gibbs/project/ishizuka/yf322/CellChat/RDS_object_MDK/MEL_MEL720_IFNb_cellchat_MDK_noNCL.rds")
+```
+
+
+# Interaction comparision {.tabset .tabset-fade}
+
+We are doing comparison between:
+
+- MCC vs. MEL (after updating mislabeled cancer cells)
+- MCC vs. MEL (after deletion of mislabeled cancer cells)
+
+- R vs. NR
+- R vs. NR (after updating mislabeled cancer cells)
+- R vs. NR (after deletion of mislabeled cancer cells)
+
+- MCC R vs. MCC NR (after updating mislabeled cancer cells)
+- MCC R vs. MCC NR (after deletion of mislabeled cancer cells)
+
+- MCC YUEYE & MCC YUMISTY
+```{r message=FALSE}
+# create a function that run cellchat for MDK
+# Inputs:
+# cc1_name: cellchat object 1 name, cc1: cellchat object 1
+# cc2_name: cellchat object 2 name, cc2: cellchat object 2
+run_cellchat_MDK <- function(object.list){
+  # create the merged cellchat object
+  cellchat <- mergeCellChat(object.list, add.names = names(object.list))
+  
+  # bar plots
+  gg1 <- compareInteractions(cellchat, show.legend = F, group = c(1,2))
+  gg2 <- compareInteractions(cellchat, show.legend = F, group = c(1,2), measure = "weight")
+  print(gg1 + gg2)
+  
+  # differential circle plots
+  par(mfrow = c(1,2), xpd=TRUE)
+  netVisual_diffInteraction(cellchat, weight.scale = T)
+  netVisual_diffInteraction(cellchat, weight.scale = T, measure = "weight")
+  
+  # num of interaction circle plots for the two object side by side
+  weight.max <- getMaxWeight(object.list, attribute = c("idents","count"))
+  par(mfrow = c(1,2), xpd=TRUE)
+  for (i in 1:length(object.list)) {
+    netVisual_circle(object.list[[i]]@net$count, weight.scale = T, label.edge= T, edge.weight.max = weight.max[2], edge.width.max = 12, title.name = paste0("Number of interactions - ", names(object.list)[i]))
+  }
+  
+  # weight of interaction circle plots for the two object side by side
+  weight.max <- getMaxWeight(object.list, attribute = c("idents","weight"))
+  par(mfrow = c(1,2), xpd=TRUE)
+  for (i in 1:length(object.list)) {
+    netVisual_circle(object.list[[i]]@net$weight, weight.scale = T, label.edge= T, edge.weight.max = weight.max[2], edge.width.max = 12, arrow.size = 0.5, title.name = paste0("Weight of interactions - ", names(object.list)[i]))
+  }
+  
+  # bubble plots
+  if (names(object.list)[2] != "MEL"){
+    netVisual_bubble(cellchat, sources.use = c("MCC"), comparison = c(1, 2), angle.x = 45, thresh = 1)
+  } else {
+    netVisual_bubble(object.list[[1]], sources.use = c("MCC"), angle.x = 45, thresh = 1)
+  }
+}
+```
+
+
+## MCC vs. MEL after updating
+* bubble plot is created only from interactions in MCC since no interactions are in MEL
+```{r}
+object.list <- list(MCC = cellchat_MCC_updated, MEL = cellchat_MEL_updated)
+run_cellchat_MDK(object.list)
+```
+
+## MCC vs. MEL after deletion
+* bubble plot is created only from interactions in MCC since no interactions are in MEL
+```{r}
+object.list <- list(MCC = cellchat_MCC_deleted, MEL = cellchat_MEL_deleted)
+run_cellchat_MDK(object.list)
+```
+
+## R vs. NR
+```{r}
+object.list <- list(R = cellchat_R, NR = cellchat_NR)
+run_cellchat_MDK(object.list)
+```
+
+## R vs. NR after updating
+```{r}
+object.list <- list(R = cellchat_R_updated, NR = cellchat_NR_updated)
+run_cellchat_MDK(object.list)
+```
+
+## R vs. NR after deletion
+```{r}
+object.list <- list(R = cellchat_R_deleted, NR = cellchat_NR_deleted)
+run_cellchat_MDK(object.list)
+```
+
+## MCC R vs. MCC NR after updating
+```{r}
+object.list <- list(MCC_R = cellchat_MCC_R_updated, MCC_NR = cellchat_MCC_NR_updated)
+run_cellchat_MDK(object.list)
+```
+
+## MCC R vs. MCC NR after deletion
+```{r}
+object.list <- list(MCC_R = cellchat_MCC_R_deleted, MCC_NR = cellchat_MCC_NR_deleted)
+run_cellchat_MDK(object.list)
+```
+
+## MCC YUEYE vs MCC YUMISTY (after updating)
+```{r}
+object.list <- list(MCC_YUEYE = cellchat_MCC_YUEYE, MCC_YUMISTY = cellchat_MCC_YUMISTY)
+run_cellchat_MDK(object.list)
+```
+
+
+# Interaction comparision with keeping only the top interactions {.tabset .tabset-fade}
+
+* Both used deleted version
+
+## MCC R vs. MCC NR after deletion with filtering
+
+```{r}
+object.list <- list(MCC_R = cellchat_MCC_R_deleted, MCC_NR = cellchat_MCC_NR_deleted)
+cellchat <- mergeCellChat(object.list, add.names = names(object.list))
+
+weight.max <- getMaxWeight(object.list, attribute = c("idents","weight"))
+par(mfrow = c(1,2), xpd=TRUE)
+for (i in 1:length(object.list)) {
+  netVisual_circle(object.list[[i]]@net$weight, top = 0.04, weight.scale = T, label.edge= T, edge.weight.max = weight.max[2], edge.width.max = 12, arrow.size = 0.8, title.name = paste0("Weight of interactions - ", names(object.list)[i]))
+}
+```
+
+
+## MCC vs. MEL after deletion with filtering
+
+```{r}
+object.list <- list(MCC = cellchat_MCC_deleted, MEL = cellchat_MEL_deleted)
+cellchat <- mergeCellChat(object.list, add.names = names(object.list))
+
+weight.max <- getMaxWeight(object.list, attribute = c("idents","weight"))
+par(mfrow = c(1,2), xpd=TRUE)
+for (i in 1:length(object.list)) {
+  netVisual_circle(object.list[[i]]@net$weight, top = 0.04, weight.scale = T, label.edge= T, edge.weight.max = weight.max[2], edge.width.max = 12, arrow.size = 0.8, title.name = paste0("Weight of interactions - ", names(object.list)[i]))
+}
+```
+
+
+```{r create merged object, message=FALSE}
+object.list <- list(MCC = cellchat_MCC_deleted, MEL = cellchat_MEL_deleted)
+#object.list <- list(MCC_R = cellchat_MCC_R_deleted, MCC_NR = cellchat_MCC_NR_deleted)
+cellchat <- mergeCellChat(object.list, add.names = names(object.list))
+cellchat
+```
+
+```{r}
+pdf(file="/gpfs/gibbs/project/ishizuka/yf322/CellChat/Figures_MDK/MCC_vs_MEL/bar_plot_MCC_R_vs_NR.pdf", width = 8, height = 5)
+gg1 <- compareInteractions(cellchat, show.legend = F, group = c(1,2), width = 0.5, size.text = 18)
+gg2 <- compareInteractions(cellchat, show.legend = F, group = c(1,2), measure = "weight", width = 0.5, size.text = 18)
+gg1 + gg2
+while (!is.null(dev.list())) dev.off()
+```
+
+```{r}
+#pdf(file="/gpfs/gibbs/project/ishizuka/yf322/CellChat/Figures_MDK/circle_diff_R_vs_NR.pdf")
+par(mfrow = c(1,2), xpd=TRUE)
+netVisual_diffInteraction(cellchat, weight.scale = T)
+netVisual_diffInteraction(cellchat, weight.scale = T, measure = "weight")
+#while (!is.null(dev.list())) dev.off()
+```
+circle plot
+```{r}
+pdf(file="/gpfs/gibbs/project/ishizuka/yf322/CellChat/Figures_MDK/MCC_R_vs_NR/circle_plot_number_MCC_R_vs_NR2.pdf", width = 10, height = 10)
+weight.max <- getMaxWeight(object.list, attribute = c("idents","count"))
+par(mfrow = c(1,2), xpd=TRUE)
+for (i in 1:length(object.list)) {
+  netVisual_circle(object.list[[i]]@net$count, weight.scale = T, label.edge= T, edge.weight.max = weight.max[2], edge.width.max = 12, title.name = paste0("Number of interactions - ", names(object.list)[i]))
+}
+while (!is.null(dev.list())) dev.off()
+```
+
+```{r}
+pdf(file="/gpfs/gibbs/project/ishizuka/yf322/CellChat/Figures_MDK/MCC_R_vs_NR/circle_plot_weight_MCC_R_vs_NR.pdf", width = 10, height = 10)
+weight.max <- getMaxWeight(object.list, attribute = c("idents","weight"))
+par(mfrow = c(1,2), xpd=TRUE)
+for (i in 1:length(object.list)) {
+  netVisual_circle(object.list[[i]]@net$weight, weight.scale = T, label.edge= T, edge.weight.max = weight.max[2], edge.width.max = 12, arrow.size = 0.8, title.name = paste0("Weight/Strength of interactions - ", names(object.list)[i]))
+}
+dev.off()
+```
+
+circle plot after filtering based on the interaction weight
+
+```{r}
+pdf(file="/gpfs/gibbs/project/ishizuka/yf322/CellChat/Figures_MDK/MCC_vs_MEL/circle_plot_weight_MCC_vs_MEL_after_filtering.pdf", width = 10, height = 10)
+weight.max <- getMaxWeight(object.list, attribute = c("idents","weight"))
+par(mfrow = c(1,2), xpd=TRUE)
+for (i in 1:length(object.list)) {
+  netVisual_circle(object.list[[i]]@net$weight, top = 0.04, weight.scale = T, label.edge= T, edge.weight.max = weight.max[2], edge.width.max = 12, arrow.size = 0.8, title.name = paste0("Weight/Strength of interactions - ", names(object.list)[i]))
+}
+dev.off()
+```
+
+
+```{r}
+pdf(file="/gpfs/gibbs/project/ishizuka/yf322/CellChat/Figures_MDK/MCC_vs_MEL/bubble_plot_MCC_vs_MEL_after_filtering.pdf", width = 4, height = 4)
+netVisual_bubble(object.list[[1]], sources.use = c("MCC"), targets.use = c("MCC", "Myeloid cells"), angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15)
+#netVisual_bubble(cellchat, sources.use = c("MCC"), comparison = c(1, 2), angle.x = 45, thresh = 0.9, dot.size.max = 8, dot.size.min = 3, font.size = 15)
+while (!is.null(dev.list())) dev.off()
+```
+
+
+## MCC YUEYE vs MCC YUMISTY
+
+```{r}
+object.list <- list(YUEYE = cellchat_MCC_YUEYE, YUMISTY = cellchat_MCC_YUMISTY)
+cellchat <- mergeCellChat(object.list, add.names = names(object.list))
+
+#pdf(file="/gpfs/gibbs/project/ishizuka/yf322/CellChat/Figures_MDK/circle_plot_weight_YUEYE_YUMISTY_after_filtering.pdf", width = 10, height = 10)
+weight.max <- getMaxWeight(object.list, attribute = c("idents","weight"))
+par(mfrow = c(1,2), mar = c(1, 1, 3, 1), xpd=TRUE)
+for (i in 1:length(object.list)) {
+  netVisual_circle(object.list[[i]]@net$weight, top = 0.04, weight.scale = T, label.edge= T, edge.weight.max = weight.max[2], edge.width.max = 12, arrow.size = 0.8, title.name = paste0("Weight/Strength of interactions - ", names(object.list)[i]))
+}
+#dev.off()
+
+
+#pdf(file="/gpfs/gibbs/project/ishizuka/yf322/CellChat/Figures_MDK/bubble_plot_YUEYE_YUMISTY_after_filtering.pdf", width = 4, height = 4)
+netVisual_bubble(object.list[[1]], sources.use = c("MCC"), targets.use = c("MCC", "Myeloid cells"), angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = "YUEYE", return.data = TRUE)
+netVisual_bubble(object.list[[2]], sources.use = c("MCC"), targets.use = c("Myeloid cells"), angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = "YUMISTY", return.data = TRUE)
+#while (!is.null(dev.list())) dev.off()
+
+
+object.list[[1]]@net$weight
+object.list[[2]]@net$weight
+
+subsetCommunication(cellchat_MCC_YUMISTY)
+subsetCommunication(object.list[[1]])
+```
+
+## MCC sample level: YUEYE, YUMISTY, NS/SLR14/IFNb
+
+```{r}
+object.list <- list(YUEYE_ns = cellchat_MCC_YUEYE, YUEYE_SLR14 = cellchat_MCC_YUEYE_SLR14, YUEYE_IFNb = cellchat_MCC_YUEYE_IFNb, YUMISTY_ns = cellchat_MCC_YUMISTY, YUMISTY_SLR14 = cellchat_MCC_YUMISTY_SLR14, YUMISTY_IFNb = cellchat_MCC_YUMISTY_IFNb)
+object.list_noNCL <- list(YUEYE_ns = cellchat_MCC_YUEYE_noNCL, YUEYE_SLR14 = cellchat_MCC_YUEYE_SLR14_noNCL, YUEYE_IFNb = cellchat_MCC_YUEYE_IFNb_noNCL, YUMISTY_ns = cellchat_MCC_YUMISTY_noNCL, YUMISTY_SLR14 = cellchat_MCC_YUMISTY_SLR14_noNCL, YUMISTY_IFNb = cellchat_MCC_YUMISTY_IFNb_noNCL)
+
+# define object list
+object.list <- object.list_noNCL
+  
+cellchat <- mergeCellChat(object.list, add.names = names(object.list))
+
+#pdf(file="/gpfs/gibbs/project/ishizuka/yf322/CellChat/Figures_MDK/circle_plot_weight_YUEYE_YUMISTY_condition_noNCL.pdf", width = 15, height = 10)
+weight.max <- getMaxWeight(object.list, attribute = c("idents","weight"))
+par(mfrow = c(2,3), mar = c(1, 1, 3, 1), xpd=TRUE)
+for (i in 1:length(object.list)) {
+  netVisual_circle(object.list[[i]]@net$weight, weight.scale = T, label.edge= T, edge.weight.max = weight.max[2], edge.width.max = 12, arrow.size = 0.8, title.name = paste0("Weight/Strength of interactions - ", names(object.list)[i]))
+}
+#dev.off()
+
+pdf(file="/gpfs/gibbs/project/ishizuka/yf322/CellChat/Figures_MDK/bubble_plot_YUEYE_YUMISTY_condition_noNCL.pdf", width = 10, height = 10)
+netVisual_bubble(cellchat, angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, comparison = c(1, 2, 3, 4), remove.isolate = TRUE)
+
+netVisual_bubble(object.list[[1]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[1]], remove.isolate = TRUE)
+netVisual_bubble(object.list[[2]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[2]], remove.isolate = TRUE)
+netVisual_bubble(object.list[[3]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[3]], remove.isolate = TRUE)
+netVisual_bubble(object.list[[4]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[4]], remove.isolate = TRUE)
+netVisual_bubble(object.list[[5]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[5]], remove.isolate = TRUE)
+netVisual_bubble(object.list[[6]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[6]], remove.isolate = TRUE)
+dev.off()
+
+```
+
+## MEL, sample level
+
+```{r}
+object.list <- list(YUBOISE_ns = cellchat_MEL_YUBOISE_ns_noNCL,
+                    YUTOUL_ns = cellchat_MEL_YUTOUL_ns_noNCL,
+                    YUBOISE_SLR14 = cellchat_MEL_YUBOISE_SLR14_noNCL, 
+                    YUSYR_SLR14 = cellchat_MEL_YUSYR_SLR14_noNCL, 
+                    YUBOISE_IFNb = cellchat_MEL_YUBOISE_IFNb_noNCL, 
+                    YUSYR_IFNb = cellchat_MEL_YUSYR_IFNb_noNCL, 
+                    YUTOUL_IFNb = cellchat_MEL_YUTOUL_IFNb_noNCL,
+                    MEL720_IFNb = cellchat_MEL_MEL720_IFNb_noNCL)
+
+
+cellchat <- mergeCellChat(object.list, add.names = names(object.list))
+
+#pdf(file="/gpfs/gibbs/project/ishizuka/yf322/CellChat/Figures_MDK/circle_plot_weight_MEL_condition_noNCL.pdf", width = 15, height = 10)
+weight.max <- getMaxWeight(object.list, attribute = c("idents","weight"))
+par(mfrow = c(2,4), mar = c(1, 1, 3, 1), xpd=TRUE)
+for (i in 1:length(object.list)) {
+  netVisual_circle(object.list[[i]]@net$weight, weight.scale = T, label.edge= T, edge.weight.max = weight.max[2], edge.width.max = 12, arrow.size = 0.8, title.name = paste0("Weight/Strength of interactions - ", names(object.list)[i]))
+}
+#dev.off()
+
+pdf(file="/gpfs/gibbs/project/ishizuka/yf322/CellChat/Figures_MDK/bubble_plot_MEL_condition_noNCL.pdf", width = 10, height = 6)
+netVisual_bubble(cellchat, angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, comparison = c(1, 2, 3, 4, 5, 6, 7, 8), remove.isolate = TRUE)
+
+netVisual_bubble(object.list[[1]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[1]], remove.isolate = TRUE)
+netVisual_bubble(object.list[[2]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[2]], remove.isolate = TRUE)
+netVisual_bubble(object.list[[3]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[3]], remove.isolate = TRUE)
+netVisual_bubble(object.list[[4]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[4]], remove.isolate = TRUE)
+netVisual_bubble(object.list[[5]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[5]], remove.isolate = TRUE)
+netVisual_bubble(object.list[[6]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[6]], remove.isolate = TRUE)
+netVisual_bubble(object.list[[7]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[7]], remove.isolate = TRUE)
+netVisual_bubble(object.list[[8]], angle.x = 45, thresh = 0.9, dot.size.max = 8, font.size = 15, title.name = names(object.list)[[8]], remove.isolate = TRUE)
+
+dev.off()
+
+```

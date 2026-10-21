@@ -1,0 +1,19 @@
+interaction_name,pathway_name,ligand,receptor,evidence,annotation,interaction_name_2
+MDK_SDC1,MK,MDK,SDC1,PMID: 28356350,Secreted Signaling,MDK - SDC1
+MDK_SDC2,MK,MDK,SDC2,PMID: 28356350,Secreted Signaling,MDK - SDC2
+MDK_SDC4,MK,MDK,SDC4,PMID: 28356350,Secreted Signaling,MDK - SDC4
+MDK_PTPRZ1,MK,MDK,PTPRZ1,PMID: 28356350,Secreted Signaling,MDK - PTPRZ1
+MDK_ITGA4_ITGB1,MK,MDK,ITGA4_ITGB1,PMID: 28356350,Secreted Signaling,MDK - (ITGA4+ITGB1)
+MDK_ITGA6_ITGB1,MK,MDK,ITGA6_ITGB1,PMID: 28356350,Secreted Signaling,MDK - (ITGA6+ITGB1)
+MDK_LRP1,MK,MDK,LRP1,PMID: 28356350,Secreted Signaling,MDK - LRP1
+MDK_NCL,MK,MDK,NCL,PMID: 28356350,Secreted Signaling,MDK - NCL
+MDK_ALK,MK,MDK,ALK,,Secreted Signaling,MDK - ALK
+MDK_NOTCH2,MK,MDK,NOTCH2,,Secreted Signaling,MDK - NOTCH2
+PTN_PTPRZ1,PTN,Ptn,Ptprz1,,Secreted Signaling,PTN - Ptprz1
+PTN_SDC1,PTN,Ptn,Sdc1,,Secreted Signaling,PTN - Sdc1
+PTN_SDC2,PTN,Ptn,Sdc2,,Secreted Signaling,PTN - Sdc2
+PTN_SDC3,PTN,Ptn,Sdc3,,Secreted Signaling,PTN - Sdc3
+PTN_SDC4,PTN,Ptn,Sdc4,,Secreted Signaling,PTN - Sdc4
+PTN_ITGAV_ITGB3,PTN,Ptn,ITGAV_ITGB3,,Secreted Signaling,PTN - ITGAV_ITGB3
+PTN_NCL,PTN,Ptn,Ncl,,Secreted Signaling,PTN - Ncl
+PTN_ALK,PTN,Ptn,Alk,,Secreted Signaling,PTN - Alk
