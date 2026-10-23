@@ -1,7 +1,7 @@
-# PERCEPT Preprocessing Pipeline
+# PERCEPT
 
 ## Overview:
-This PERCEPT pipeline includes preprocessing, MELD, CINEMA_OT, and CellChat used in the study.
+This PERCEPT pipeline includes preprocessing, MELD, CINEMA_OT, CellChat，and statistical validation used in the study.
 
 ### Preprocessing
 This preprocessing pipeline is used to do the quality control, sample integration and clustering for scRNA-seq data starting from the "filtered_bc_feature_matrix" data provided by CellRanger.
